@@ -23,6 +23,8 @@ public class UserModel {
     private String email;
     @NotBlank
     private String password;
+
+    private String roles;
     private List<FolderModel> folders;
 
 }

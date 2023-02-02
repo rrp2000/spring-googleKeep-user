@@ -19,7 +19,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
+    @PostMapping("public/register")
     public ResponseEntity<?> createUser(@RequestBody UserModel userData){
         logger.info("UserController.createUser: Started user creation process");
         UserModel response = userService.createUser(userData);
@@ -27,7 +27,7 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping("/users")
+    @GetMapping("admin/users")
     public ResponseEntity<?> getAllUsers(){
         logger.info("UserController.getAllUsers: Started retrieval of all users");
         List<UserModel> response = userService.getAllUsers();
@@ -39,7 +39,7 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/users/{id}")
+    @GetMapping("public/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable("id") String id){
         logger.info("UserController.getUserById: Started retrieval of user by id");
         UserModel response = userService.getUserById(id);

@@ -7,7 +7,11 @@ import com.google.userKeep.userKeep.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -19,8 +23,14 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return  new BCryptPasswordEncoder();
+    }
+
+
     @Autowired
-    WebClient.Builder webCilent;
+    private WebClient.Builder webClient;
 
     @Autowired
     private UserRepository userRepository;
@@ -31,6 +41,7 @@ public class UserService {
 
     public UserModel createUser(UserModel userData) {
         logger.info("Creating user");
+        userData.setPassword(passwordEncoder().encode(userData.getPassword()));
         userData.setFolders(Collections.emptyList());
         logger.info("created user successfully");
         return userRepository.save(userData);
@@ -41,13 +52,15 @@ public class UserService {
         List<UserModel> users = userRepository.findAll();
 
         users.stream().map(user->{
-            ResponseEntity<List> folders = webCilent.build()
+            ResponseEntity<List> folders = webClient.build()
                     .get()
-                    .uri("http://localhost:3000/folders/user/"+user.getId())
+//                    .uri("http://localhost:3000/folders/user/"+user.getId())
+                    .uri("http://googleKeep-folderService/folders/user/"+user.getId())
                     .retrieve()
                     .toEntity(List.class)
                     .block();
             user.setFolders(folders.getBody());
+            System.out.println(user);
             return user;
         }).collect(Collectors.toList());
 
@@ -67,9 +80,10 @@ public class UserService {
             logger.info("user found");
             UserModel user = userOptional.get();
             logger.info("getting folders for user");
-            ResponseEntity<List> folders = webCilent.build()
+            ResponseEntity<List> folders = webClient.build()
                     .get()
-                    .uri("http://localhost:3000/folders/user/"+id)
+//                    .uri("http://localhost:3000/folders/user/"+id)
+                    .uri("http://googleKeep-folderService/folders/user/"+id)
                     .retrieve()
                     .toEntity(List.class)
                     .block();
