@@ -1,12 +1,19 @@
 package com.google.userKeep.userKeep.controller;
 
+import com.google.userKeep.userKeep.model.AuthReq;
 import com.google.userKeep.userKeep.model.UserModel;
+import com.google.userKeep.userKeep.service.JWTService;
 import com.google.userKeep.userKeep.service.UserService;
+import com.netflix.discovery.converters.Auto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +26,13 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("public/register")
+    @Autowired
+    private JWTService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @PostMapping("/public/register")
     public ResponseEntity<?> createUser(@RequestBody UserModel userData){
         logger.info("UserController.createUser: Started user creation process");
         UserModel response = userService.createUser(userData);
@@ -27,7 +40,7 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping("admin/users")
+    @GetMapping("/admin/users")
     public ResponseEntity<?> getAllUsers(){
         logger.info("UserController.getAllUsers: Started retrieval of all users");
         List<UserModel> response = userService.getAllUsers();
@@ -39,7 +52,7 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("public/users/{id}")
+    @GetMapping("/public/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable("id") String id){
         logger.info("UserController.getUserById: Started retrieval of user by id");
         UserModel response = userService.getUserById(id);
@@ -51,5 +64,17 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @PostMapping("/authenticate")
+    public String authenticateAndGetToken(@RequestBody  AuthReq authReq){
+        logger.info("UserController.authenticateAndGetToken: generating token");
+        Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authReq.getUsername(), authReq.getPassword()));
+        if(authenticate.isAuthenticated()){
+            return jwtService.generateToken(authReq.getUsername());
+        }else{
+            throw new UsernameNotFoundException("Invalid user request.");
+        }
+
+    }
 
 }
